@@ -10,6 +10,17 @@ class Analyser:
             content = f.read()
         return ast.parse(content, filename=filepath)
 
+    def get_file_at_head(file_path):
+        result = subprocess.run(
+            ["git", "show", f"HEAD:{file_path}"],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode != 0:
+            # file might be new
+            return ""
+        return result.stdout
+
     def get_staged_python_files():
         """Return a list of staged Python files."""
         result = subprocess.run(
@@ -111,13 +122,10 @@ class Analyser:
         filtered_graph = {k: v for k, v in builder.graph.items() if k in all_relevant_functions}
         return filtered_graph
 
-    def get_function_snippets(file_path, function_names):
+    def get_function_snippets(code_lines, function_names):
         """
         Return a dict {function_name: code_string} for specified function_names
         """
-        with open(file_path, "r", encoding="utf-8") as f:
-            code_lines = f.readlines()
-
         tree = ast.parse("".join(code_lines))
         snippets = {}
 
@@ -159,10 +167,7 @@ class Analyser:
             dfs(node)
         return order[::-1]  # reverse to get correct order
 
-    def get_class_snippets(file_path, touched_classes):
-        with open(file_path, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-
+    def get_class_snippets(lines, touched_classes):
         tree = ast.parse("".join(lines))
         snippets = {}
 
