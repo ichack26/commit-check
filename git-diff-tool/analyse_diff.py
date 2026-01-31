@@ -1,56 +1,81 @@
 #!/usr/bin/env python3
-from anthropic import Anthropic
-from dotenv import load_dotenv 
-
+from dotenv import load_dotenv
 from analyser import Analyser
 
-load_dotenv() 
+load_dotenv()
 
 
 def main():
     staged_files = Analyser.get_staged_python_files()
-    total_graph = {}
+    total_graph = {}  # file -> call graph
+    total_classes = {}  # file -> classes in file
 
+    # Step 1: Build call graphs and collect class info
     for f in staged_files:
         changed_funcs = Analyser.get_changed_functions(f)
         if not changed_funcs:
             continue
-        graph = Analyser.build_call_graph_for_changed_functions(f, changed_funcs)
-        print(graph)
+
+        tree = Analyser.parse_file_to_ast(f)
+        from call_graph_builder import CallGraphBuilder
+        builder = CallGraphBuilder()
+        builder.visit(tree)
+
+        # Save call graph
+        graph = builder.graph
         total_graph[f] = graph
 
+        # Save class info
+        total_classes[f] = builder.classes
+
+        print(f"Graph for {f}: {graph}")
+        print(f"Classes for {f}: {builder.classes}")
+
+    # Step 2: Traverse call graphs to find all reachable functions and touched classes
     all_function_code = {}
 
     for file_path, graph in total_graph.items():
-        changed_funcs = list(graph.keys())
-        all_funcs = Analyser.traverse_graph_for_snippets(graph, changed_funcs)
-        snippets = Analyser.get_function_snippets(file_path, all_funcs)
-        all_function_code[file_path] = snippets
+        # Start traversal from changed functions
+        changed_funcs = Analyser.get_changed_functions(file_path)
+        reachable_funcs = Analyser.traverse_call_graph(graph, changed_funcs, max_depth=5)
 
-    # Example printout
+        # Determine which classes are touched
+        touched_classes = set()
+        for func in reachable_funcs:
+            # If the function belongs to a class, mark the class as touched
+            tree = Analyser.parse_file_to_ast(file_path)
+            from call_graph_builder import CallGraphBuilder
+            builder = CallGraphBuilder()
+            builder.visit(tree)
+            cls = builder.function_to_class.get(func)
+            if cls:
+                touched_classes.add(cls)
+            # Also, if a class is instantiated or method/property accessed in graph, include it
+            for callee in graph.get(func, []):
+                if callee in builder.classes:
+                    touched_classes.add(callee)
+                # also include left-most class parts if it's like Outer.Inner.method
+                parts = callee.split(".")
+                for i in range(1, len(parts)):
+                    candidate_cls = ".".join(parts[:i])
+                    if candidate_cls in builder.classes:
+                        touched_classes.add(candidate_cls)
+
+        # Step 3: Extract snippets
+        class_snippets = Analyser.get_class_snippets(file_path, touched_classes)
+        function_snippets = Analyser.get_function_snippets(file_path, reachable_funcs)
+
+        # Merge results: class snippets take precedence
+        merged_snippets = {**function_snippets, **class_snippets}
+        all_function_code[file_path] = merged_snippets
+
+    # Step 4: Print
     for f, funcs in all_function_code.items():
-        print(f"File: {f}")
-        for func_name, code in funcs.items():
-            print(f"Function: {func_name}")
-            print(code)
+        print(f"\nFile: {f}")
+        for name, code in funcs.items():
+            print(f"\n{name}:\n{code}")
             print("-" * 40)
 
-    # # load_dotenv() 
-    # # client = Anthropic()
-    
-    # # response = client.messages.create(
-    # #     model="claude-sonnet-4-5",  
-    # #     max_tokens=100,  # Maximum response length
-    # #     messages=[
-    # #         {
-    # #         "role": "user", # Specifies the message is coming from the user (the role is "assistant" for responses from the LLMs) 
-    # #         "content": "Do nothing and just repeat " + diff}
-    # #     ]
-    # # )
-
-    # # print("===== GIT DIFF START =====")
-    # # print(response.content)
-    # # print("===== GIT DIFF END =====")
 
 if __name__ == "__main__":
     main()

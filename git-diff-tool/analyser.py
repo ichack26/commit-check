@@ -158,3 +158,25 @@ class Analyser:
         for node in graph:
             dfs(node)
         return order[::-1]  # reverse to get correct order
+
+    def get_class_snippets(file_path, touched_classes):
+        with open(file_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        tree = ast.parse("".join(lines))
+        snippets = {}
+
+        class_stack = []
+
+        class Visitor(ast.NodeVisitor):
+            def visit_ClassDef(self, node):
+                class_stack.append(node.name)
+                full_name = ".".join(class_stack)
+                if full_name in touched_classes:
+                    start, end = node.lineno - 1, node.end_lineno
+                    snippets[full_name] = "".join(lines[start:end])
+                self.generic_visit(node)
+                class_stack.pop()
+
+        Visitor().visit(tree)
+        return snippets
