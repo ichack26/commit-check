@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from dotenv import load_dotenv
+from anthropic import Anthropic
+
 from analyser import Analyser
 
 def format_for_llm(all_function_code):
@@ -12,10 +14,6 @@ def format_for_llm(all_function_code):
             lines.append(code)
             lines.append("")  # spacing between snippets
     return "\n".join(lines)
-
-
-load_dotenv()
-
 
 def main():
     staged_files = Analyser.get_staged_python_files()
@@ -78,9 +76,33 @@ def main():
         merged_snippets = {**function_snippets, **class_snippets}
         all_function_code[file_path] = merged_snippets
 
-    prompt_text = format_for_llm(all_function_code)
+    function_info_text = format_for_llm(all_function_code)
 
-    print(prompt_text)
+    template_text = """Review this python code for:
+    - bugs and logical errors
+    - performance issues
+    - security vulnerabilities
+    - code style and best practices
+
+    """
+
+    prompt_text = template_text + function_info_text
+
+    load_dotenv()
+
+    client = Anthropic()
+
+    response = client.messages.create(
+    model="claude-sonnet-4-5",  
+    max_tokens=1000,  # Maximum response length
+    messages=[
+        {
+        "role": "user", # Specifies the message is coming from the user (the role is "assistant" for responses from the LLMs) 
+        "content": prompt_text}
+    ]
+    )
+
+    print("\n\n".join([text_block.text for text_block in response.content]))
 
 
 if __name__ == "__main__":
