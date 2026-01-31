@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
+from anthropic import Anthropic
+from dotenv import load_dotenv 
 
 import subprocess
+
+load_dotenv() 
 
 def main():
     # Get staged diff
