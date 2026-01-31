@@ -16,6 +16,7 @@ def main():
         if not changed_funcs:
             continue
         graph = Analyser.build_call_graph_for_changed_functions(f, changed_funcs)
+        print(graph)
         total_graph[f] = graph
 
     for f, g in total_graph.items():

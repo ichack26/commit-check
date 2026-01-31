@@ -5,7 +5,7 @@ class foo:
 def b(x):
     return foo.bars(x + 1)
 
-def a(x):
+def ab(x):
     return 3 + b(x)
 
 def new(x):
@@ -15,7 +15,7 @@ def new(x):
 def h(x):
     return x + new(x)
 
-z = a(1)
+z = ab(1)
 print(z)
 y = 3 + z * 3
 print(y)

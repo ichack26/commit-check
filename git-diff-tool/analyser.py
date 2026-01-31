@@ -74,14 +74,33 @@ class Analyser:
                 affected_functions.append(func["name"])
         return affected_functions
 
+    def traverse_call_graph(graph, start_nodes):
+        """
+        Return all functions reachable from start_nodes in the call graph.
+        
+        graph: {func_name: set(called_funcs)}
+        start_nodes: list or set of functions
+        """
+        visited = set()
+        stack = list(start_nodes)
+        while stack:
+            func = stack.pop()
+            if func not in visited:
+                visited.add(func)
+                # Add any functions this function calls
+                stack.extend(graph.get(func, []))
+        return visited
+
     def build_call_graph_for_changed_functions(file_path, affected_functions):
         tree = Analyser.parse_file_to_ast(file_path)
         builder = CallGraphBuilder()
-
         builder.visit(tree)
-        
-        # Filter graph to only include affected functions + their calls
-        filtered_graph = {k: v for k, v in builder.graph.items() if k in affected_functions}
+
+        # Get all functions reachable from affected_functions
+        all_relevant_functions = Analyser.traverse_call_graph(builder.graph, affected_functions)
+
+        # Filter the builder graph to only include relevant functions
+        filtered_graph = {k: v for k, v in builder.graph.items() if k in all_relevant_functions}
         return filtered_graph
 
     def get_function_snippets(file_path, function_names):
@@ -116,3 +135,18 @@ class Analyser:
                 visited.add(func)
                 stack.extend(graph.get(func, []))
         return visited
+    
+    def topological_sort(graph):
+        visited = set()
+        order = []
+
+        def dfs(node):
+            if node not in visited:
+                visited.add(node)
+                for neighbor in graph.get(node, []):
+                    dfs(neighbor)
+                order.append(node)
+
+        for node in graph:
+            dfs(node)
+        return order[::-1]  # reverse to get correct order
