@@ -185,17 +185,18 @@ A correct solution:
 
     client = Anthropic()
 
-    response = client.messages.create(
-    model="claude-sonnet-4-5",  
-    max_tokens=1000,  # Maximum response length
+    with client.messages.stream(
+    model="claude-sonnet-4-5",
+    max_tokens=1000,
     messages=[
         {
-        "role": "user", # Specifies the message is coming from the user (the role is "assistant" for responses from the LLMs) 
-        "content": prompt_text}
-    ]
-    )
-
-    print("\n\n".join([text_block.text for text_block in response.content]))
+            "role": "user",
+            "content": prompt_text
+        }
+        ]
+    ) as stream:
+        for text in stream.text_stream:
+            print(text, end="", flush=True)
 
 
 if __name__ == "__main__":
