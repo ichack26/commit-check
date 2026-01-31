@@ -158,6 +158,7 @@ The code which you are provided with will be given in the following format.
 The old code and the new code will be separated by the following delimiter.
 ====$NEW CODE$====
 
+
 ## Constraints
 - {TIME / RESOURCE / FORMAT LIMITS}
 - {TOOLS YOU MAY OR MAY NOT USE}
@@ -165,8 +166,15 @@ The old code and the new code will be separated by the following delimiter.
 
 ## Output Requirements
 Your output must:
-- If you believe that the code won't be meaningfully changed please just respond with “Looks all good :)”.
+- If there were no physical changes made at all please out “Nothing to review”
+- If you believe that the code won't be meaningfully changed please just respond with “Looks all good :)”. Do not output anything else.
 - If you believe that the code will be meaningfully changed then please respond by saying what you believe will be changed along with the old and new code.
+
+{NUMBER}. **In `{FILE_NAME}`, {function/class} `{NAME}`:**
+   - **Old code:** {Behaviour of the old code}
+   - **New code:** {Behaviour of the new code}
+   - **Change:** {The change between the new and old code and why it could cause problems, keep it concise}
+   - **Questions to think about** {Gives some questions for the programmer to think about, these questions should help the programmer fix the code but it should not give them the answer}
 
 ## Quality Bar
 A correct solution:
