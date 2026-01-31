@@ -1,4 +1,7 @@
 import test
 
 def fun2(x):
-    return fun1(x) + 2
+    def f():
+        return 3
+
+    return fun1(x) + f()

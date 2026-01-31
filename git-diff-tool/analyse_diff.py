@@ -2,6 +2,18 @@
 from dotenv import load_dotenv
 from analyser import Analyser
 
+def format_for_llm(all_function_code):
+    lines = []
+    for file_path, snippets in all_function_code.items():
+        lines.append(f"===== FILE: {file_path} =====")
+        for name, code in snippets.items():
+            kind = "CLASS" if "class " in code.splitlines()[0] else "FUNCTION"
+            lines.append(f"{kind}: {name}")
+            lines.append(code)
+            lines.append("")  # spacing between snippets
+    return "\n".join(lines)
+
+
 load_dotenv()
 
 
@@ -27,9 +39,6 @@ def main():
 
         # Save class info
         total_classes[f] = builder.classes
-
-        print(f"Graph for {f}: {graph}")
-        print(f"Classes for {f}: {builder.classes}")
 
     # Step 2: Traverse call graphs to find all reachable functions and touched classes
     all_function_code = {}
@@ -69,12 +78,9 @@ def main():
         merged_snippets = {**function_snippets, **class_snippets}
         all_function_code[file_path] = merged_snippets
 
-    # Step 4: Print
-    for f, funcs in all_function_code.items():
-        print(f"\nFile: {f}")
-        for name, code in funcs.items():
-            print(f"\n{name}:\n{code}")
-            print("-" * 40)
+    prompt_text = format_for_llm(all_function_code)
+
+    print(prompt_text)
 
 
 if __name__ == "__main__":
