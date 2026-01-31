@@ -73,23 +73,27 @@ class Analyser:
             if changed_lines.intersection(range(func["start"], func["end"] + 1)):
                 affected_functions.append(func["name"])
         return affected_functions
-
-    def traverse_call_graph(graph, start_nodes):
-        """
-        Return all functions reachable from start_nodes in the call graph.
-        
-        graph: {func_name: set(called_funcs)}
-        start_nodes: list or set of functions
-        """
+    
+    def traverse_call_graph(graph, start_nodes, max_depth=5):
         visited = set()
-        stack = list(start_nodes)
+        stack = [(fn, 0) for fn in start_nodes]
+
         while stack:
-            func = stack.pop()
-            if func not in visited:
-                visited.add(func)
-                # Add any functions this function calls
-                stack.extend(graph.get(func, []))
+            func, depth = stack.pop()
+
+            if func in visited:
+                continue
+
+            visited.add(func)
+
+            if depth >= max_depth:
+                continue
+
+            for callee in graph.get(func, []):
+                stack.append((callee, depth + 1))
+
         return visited
+
 
     def build_call_graph_for_changed_functions(file_path, affected_functions):
         tree = Analyser.parse_file_to_ast(file_path)
@@ -97,7 +101,11 @@ class Analyser:
         builder.visit(tree)
 
         # Get all functions reachable from affected_functions
-        all_relevant_functions = Analyser.traverse_call_graph(builder.graph, affected_functions)
+        all_relevant_functions = Analyser.traverse_call_graph(
+            builder.graph,
+            affected_functions,
+            max_depth = 5
+            )
 
         # Filter the builder graph to only include relevant functions
         filtered_graph = {k: v for k, v in builder.graph.items() if k in all_relevant_functions}

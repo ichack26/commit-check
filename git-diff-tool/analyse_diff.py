@@ -19,11 +19,6 @@ def main():
         print(graph)
         total_graph[f] = graph
 
-    for f, g in total_graph.items():
-        print(f"File: {f}")
-        for func, calls in g.items():
-            print(f"  {func} -> {calls}")
-    print("\n\n\n")
     all_function_code = {}
 
     for file_path, graph in total_graph.items():
