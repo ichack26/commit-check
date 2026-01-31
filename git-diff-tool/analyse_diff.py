@@ -67,6 +67,13 @@ def get_all_function_code(files, source="STAGED"):
 
         for func in reachable_funcs:
             cls = builder.function_to_class.get(func)
+
+            if not cls:
+                # try to match by suffix if func is short
+                for k, v in builder.function_to_class.items():
+                    if k.endswith(func):
+                        cls = v
+                        break
             if cls:
                 touched_classes.add(cls)
 
@@ -129,33 +136,66 @@ def main():
     old_text = format_for_llm(old_code)
     new_text = format_for_llm(new_code)
 
+
     # function_info_text = format_for_llm(all_function_code)
 
-    # template_text = """Review this python code for:
-    # - bugs and logical errors
-    # - performance issues
-    # - security vulnerabilities
-    # - code style and best practices
+    template_text = """You are an AI agent acting as a checker for git commit differences. You will be provided with the original code and the modified code. Do not provide follow up questions. You will not be responded to.
 
-    # """
+Your primary goal is:
+Your task is to determine if the changes to the code will change the functionality of the code. If you discover that the code will be meaningfully changed by the commit, please specify what the new code has changed over the old code. If you believe that the code won't be meaningfully changed please just respond with “Looks all good :)”.
 
-    # prompt_text = template_text + function_info_text
+## Inputs
+You will be provided with:
+- The old code
+- The new code
 
-    # load_dotenv()
+The code which you are provided with will be given in the following format.
 
-    # client = Anthropic()
+==== {FILE_NAME} ====
+{FUNCTION/CLASS}: {def / class} {name}
+	{body}
 
-    # response = client.messages.create(
-    # model="claude-sonnet-4-5",  
-    # max_tokens=1000,  # Maximum response length
-    # messages=[
-    #     {
-    #     "role": "user", # Specifies the message is coming from the user (the role is "assistant" for responses from the LLMs) 
-    #     "content": prompt_text}
-    # ]
-    # )
+The old code and the new code will be separated by the following delimiter.
+====$NEW CODE$====
 
-    # print("\n\n".join([text_block.text for text_block in response.content]))
+## Constraints
+- {TIME / RESOURCE / FORMAT LIMITS}
+- {TOOLS YOU MAY OR MAY NOT USE}
+- {THINGS YOU MUST AVOID}
+
+## Output Requirements
+Your output must:
+- If you believe that the code won't be meaningfully changed please just respond with “Looks all good :)”.
+- If you believe that the code will be meaningfully changed then please respond by saying what you believe will be changed along with the old and new code.
+
+## Quality Bar
+A correct solution:
+- Do not be overly responsive, if there is truly no difference then just response with “Looks all good :)”
+- Is technically accurate
+- Is easy to understand
+- Do not provide solutions
+
+## Error Handling
+- If you encounter uncertainty or ambiguity please output “Something went wrong, I don’t fully understand”
+    """
+
+    prompt_text = template_text + "\n\n" + old_text + "\n\n====$NEW CODE$====\n\n" + new_text
+
+    load_dotenv()
+
+    client = Anthropic()
+
+    response = client.messages.create(
+    model="claude-sonnet-4-5",  
+    max_tokens=1000,  # Maximum response length
+    messages=[
+        {
+        "role": "user", # Specifies the message is coming from the user (the role is "assistant" for responses from the LLMs) 
+        "content": prompt_text}
+    ]
+    )
+
+    print("\n\n".join([text_block.text for text_block in response.content]))
 
 
 if __name__ == "__main__":

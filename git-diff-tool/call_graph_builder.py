@@ -20,14 +20,18 @@ class CallGraphBuilder(ast.NodeVisitor):
         prev_func = self.current_function
 
         if self.class_stack:
+            # fully qualified name for the method
             full_name = ".".join(self.class_stack + [node.name])
             self.function_to_class[full_name] = ".".join(self.class_stack)
+            # also map just the method name for easier lookup later
+            self.function_to_class[node.name] = ".".join(self.class_stack)
         else:
             full_name = node.name
 
         self.current_function = full_name
         self.generic_visit(node)
         self.current_function = prev_func
+
 
     def visit_Call(self, node):
         if not self.current_function:
