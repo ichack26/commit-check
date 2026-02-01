@@ -1,6 +1,6 @@
-~~I'll help you create a strong Devpost structure for Diffense based on the hackpack guidelines and your project materials.~~
+~~I'll help you create a strong Devpost structure for Diffence based on the hackpack guidelines and your project materials.~~
 
-# Diffense
+# Diffence
 
 Spot unintended side effects instantly and reliably. 
 
@@ -10,7 +10,7 @@ If you've ever had the issue of making a change which you thought full well woul
 
 ## What it does
 
-Diffense is a git hook that snipes commits to help developers actually use their brain about their changes before they become pull requests. By analyzing only the git diff (the code you're actually changing), Diffense uses ~~Claude~~ an intelligent AI agent to identiy the function changes. 
+Diffence is a git hook that snipes commits to help developers actually use their brain about their changes before they become pull requests. By analyzing only the git diff (the code you're actually changing), Diffence uses ~~Claude~~ an intelligent AI agent to identiy the function changes. 
 
 ## How we built it
 
@@ -24,7 +24,7 @@ The major challenge was trying to make sure the output wasn't bloated, otherwise
 
 We're proud of actually fully building a tool that works. A viable small MVP is actually really nice to test and play around with. I think the takeaway is to ensure you REALLY understand the problem you're trying to solve, before coding it, as it ultimately led us to making something that was, actually something we'd use ourselves as developers. 
 
-## What's next for Diffense
+## What's next for Diffence
 
 Building on our reference traversal foundation, we'd also like to explore detecting security vulnerabilities and suggesting refactoring opportunities at commit time. Understandably though, there's the small issue of trynig to use a non-deterministic AI agent to make conclusive confidence deterministic statements about security. We'll think about that later though. 
 
