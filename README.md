@@ -1,42 +1,42 @@
-~~I'll help you create a strong Devpost structure for Diffence based on the hackpack guidelines and your project materials.~~
-
 # Diffence
 
-Spot unintended side effects instantly and reliably. 
+Spot unintended code behaviour instantly and reliably. 
 
 ## Inspiration
 
-If you've ever had the issue of making a change which you thought full well would make the codebase better and thought, god if only there was a ~~vibecoded~~tool that could help me analyse my slop, then i suppose this would be a useful project for you. 
+With the rise of vibe-coding less developer time is spent writing new code and more is spent debugging and adapting code. We wanted to streamline the development process by helping developers understand what they have written and prevent unintended behaviour with a minimal and intuitive tool.
 
 ## What it does
 
-Diffence is a git hook that snipes commits to help developers actually use their brain about their changes before they become pull requests. By analyzing only the git diff (the code you're actually changing), Diffence uses ~~Claude~~ an intelligent AI agent to identiy the function changes. 
+Diffence is a lightweight pre‑commit git hook that uses AI to review changes in your codebase, without the overhead of inputting your entire repository. By analyzing only the git diff (the code you're actually changing), Diffence uses an intelligent AI agent to identify how the function changes, highlighting any potentially unintended behaviour.
+
+## Why not use ChatGPT/Claude/Cursor?
+Whilst direct LLM usage requires careful prompting for a concise response, Diffence provides a zero click solution by automatically running on `git commit`.
+
+Providing an LLM with an entire repository can fill its context window, degrading the accuracy and speed of responses. However, manually searching through the code base for relevant functions can be time-consuming. Diffence automatically sends required information to AI models, only processing what is necessary to understand a change.
 
 ## How we built it
 
-I think one of the coolest things about it is that we needed to figure out how to give all the necessary information, and only the necessary information, to optimize our call to the agent, and we found out getting information about a codebase is actually quite hard. We decided to use a graph to store information about all nested functions, so we'd only explore functions that were called in the new changed piece of code, which was quite neat. 
+To make Diffence as simple as possible to integrate into workflows, we decided to make it into a Git hook. By creating a Git hook, Diffence is called by Git whenever the developer runs `git commit`. Difference runs in pre-commit, allowing the developer to change their code if necessary before committing.
+
+By outputting through the command line, Diffence is both non-intrusive and compatible with every development environment.
+
+Diffence uses an abstract syntax trees (AST) to analyse a repository and the code snippet contained in a Git diff (the code to be committed). Referenced functions can be found by traversing the AST with a depth first search, producing a list of functions and definitions to be fed to the LLM. We then created an AI agent with Claude to provide a concise analysis of what has changed, highlighting potential unintentional behaviour. 
 
 ## Challenges we ran into
 
-The major challenge was trying to make sure the output wasn't bloated, otherwise it completely defeats the purpose. This was solved by extensive ~~prompt engineering~~ tuning of the AI to meet our vision. Visionaries I say. 
+We knew we wanted to make a quality of life tool for developers but struggled to identify what professionals actually wanted, having limited professional experience ourselves. To get to the root of the problems developers face, we decided to directly consult with industry professionals present at ICHack.
 
-## Achievments and learning
+Additionally, we initially only included the code snippet from the Git diff in our prompt to Claude. We found that information we provided in the Git diff was insufficient context for the LLM to understand exactly what each function did and how they worked. To solve this, we implemented the method for traversing a codebase described above.
 
-We're proud of actually fully building a tool that works. A viable small MVP is actually really nice to test and play around with. I think the takeaway is to ensure you REALLY understand the problem you're trying to solve, before coding it, as it ultimately led us to making something that was, actually something we'd use ourselves as developers. 
+## Accomplishments that we're proud of
+
+We're proud of making a tool which we would use ourselves.
+
+## What we learned
+
+We learned that the complexity of a solution is not proportional to the efficacy of the solution, the only way to solve a problem it to find its root cause.
 
 ## What's next for Diffence
 
-Building on our reference traversal foundation, we'd also like to explore detecting security vulnerabilities and suggesting refactoring opportunities at commit time. Understandably though, there's the small issue of trynig to use a non-deterministic AI agent to make conclusive confidence deterministic statements about security. We'll think about that later though. 
-
-## Built With
-- Snakes
-- Command Line Interface Tools (CLI Tools)
-- Caffeine
-- More Caffeie
-- A little bit more Caffeine
-- Vibes
-- Coding
-
-**Demo Video:** [Link to 2-3 minute video showing Diffense catching a real side effect]
-
-i really hope the other judges don't see this, I hope this is only seen for whimsy otherwise embarassinggggg. 
+In future, Diffence could be improved by adding further support for more languages, taking into account language specific features when constructing the abstract syntax trees as well as including better library support. 
