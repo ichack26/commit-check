@@ -5,6 +5,39 @@ from anthropic import Anthropic
 from analyser import Analyser
 from call_graph_builder import CallGraphBuilder
 import ast
+import sys
+
+in_code_block = False
+
+def colorise_line(line: str) -> str:
+    global in_code_block
+
+    RESET  = "\033[0m"
+    YELLOW = "\033[93m"
+    RED    = "\033[91m"
+    GREEN  = "\033[92m"
+
+    stripped = line.strip().lower()
+
+    # Toggle fenced code block
+    if stripped.startswith("```"):
+        in_code_block = not in_code_block
+        return f"{YELLOW}{line}{RESET}"
+
+    # Inside code block → yellow
+    if in_code_block:
+        return f"{YELLOW}{line}{RESET}"
+
+    # Potential issue → red
+    if stripped.startswith("- **potential issue:**") or stripped.startswith("potential issue:"):
+        return f"{RED}{line}{RESET}"
+
+    # Questions → green (header + bullets)
+    if stripped.startswith("- **questions") or stripped.startswith("- ") or stripped.startswith("questions"):
+        return f"{GREEN}{line}{RESET}"
+
+    return line
+
 
 def get_all_function_code(files, source="STAGED"):
     """
@@ -158,6 +191,7 @@ The code which you are provided with will be given in the following format.
 The old code and the new code will be separated by the following delimiter.
 ====$NEW CODE$====
 
+
 ## Constraints
 - {TIME / RESOURCE / FORMAT LIMITS}
 - {TOOLS YOU MAY OR MAY NOT USE}
@@ -165,18 +199,28 @@ The old code and the new code will be separated by the following delimiter.
 
 ## Output Requirements
 Your output must:
-- If you believe that the code won't be meaningfully changed please just respond with “Looks all good :)”.
+- If there were no physical changes made at all please out “Nothing to review”
+- If you believe that the code won't be meaningfully changed please just respond with “Looks all good :)”. Do not output anything else.
 - If you believe that the code will be meaningfully changed then please respond by saying what you believe will be changed along with the old and new code.
 
-## Quality Bar
-A correct solution:
-- Do not be overly responsive, if there is truly no difference then just response with “Looks all good :)”
-- Is technically accurate
-- Is easy to understand
-- Do not provide solutions
+{NUMBER}. `{NAME}` in `{FILE_NAME}` ({function/class})
+- **Old behaviour:** {…}
 
-## Error Handling
-- If you encounter uncertainty or ambiguity please output “Something went wrong, I don’t fully understand”
+- **New behaviour:** {…}
+
+-  **Potential issue:** {What changed and why it matters}
+
+- **Questions to think about:**
+  - {…}
+  - {…}
+
+Output format: terminal text
+Do NOT include ANSI escape codes in your output.
+Use plain text only.
+Rules:
+- Use triple backticks for code blocks
+- No explanations
+- Reset styles after every line
     """
 
     prompt_text = template_text + "\n\n" + old_text + "\n\n====$NEW CODE$====\n\n" + new_text
@@ -184,6 +228,8 @@ A correct solution:
     load_dotenv()
 
     client = Anthropic()
+
+    buffer = ""
 
     with client.messages.stream(
     model="claude-sonnet-4-5",
@@ -195,9 +241,19 @@ A correct solution:
         }
         ]
     ) as stream:
-        for text in stream.text_stream:
-            print(text, end="", flush=True)
 
+        for event in stream:
+            if event.type == "content_block_delta":
+                buffer += event.delta.text
+
+                # Flush complete lines only
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    print(colorise_line(line), flush=True)
+
+        # Flush remaining partial line
+        if buffer.strip():
+            print(colorise_line(buffer), flush=True)
 
 if __name__ == "__main__":
     main()
