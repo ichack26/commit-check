@@ -17,7 +17,7 @@ Providing an LLM with an entire repository can fill its context window, degradin
 
 ## How we built it
 
-To make Diffence as simple as possible to integrate into workflows, we decided to make it into a Git hook. By creating a Git hook, Diffence is called by Git whenever the developer runs `git commit`. Difference runs in pre-commit, allowing the developer to change their code if necessary before committing.
+To make Diffence as simple as possible to integrate into workflows, we decided to make it into a Git hook. By creating a Git hook, Diffence is called by Git whenever the developer runs `git commit`. Diffence runs in pre-commit, allowing the developer to change their code if necessary before committing.
 
 By outputting through the command line, Diffence is both non-intrusive and compatible with every development environment.
 
